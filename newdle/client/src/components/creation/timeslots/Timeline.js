@@ -5,7 +5,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import PropTypes from 'prop-types';
 import TimePicker from 'rc-time-picker';
-import {Header, Icon, Popup, Button, Grid} from 'semantic-ui-react';
+import {Icon, Popup, Button, Grid} from 'semantic-ui-react';
 import {addTimeslot, removeTimeslot, setTimezone} from '../../../actions';
 import {
   getCreationCalendarActiveDate,
@@ -17,7 +17,6 @@ import {
   getParticipantAvailability,
 } from '../../../selectors';
 import {hourRange, toMoment, getHourSpan, DEFAULT_TIME_FORMAT} from '../../../util/date';
-import {useIsSmallScreen} from '../../../util/hooks';
 import TimezonePicker from '../../common/TimezonePicker';
 import CandidateSlot from './CandidateSlot';
 import DurationPicker from './DurationPicker';
@@ -164,10 +163,7 @@ function TimelineInput({minHour, maxHour}) {
   const duration = useSelector(getDuration);
   const date = useSelector(getCreationCalendarActiveDate);
   const candidates = useSelector(getTimeslotsForActiveDate);
-  const pastCandidates = useSelector(getPreviousDayTimeslots);
   const availability = useSelector(getParticipantAvailability);
-  const [_editing, setEditing] = useState(false);
-  const editing = _editing || !!candidates.length;
   const latestStartTime = useSelector(getNewTimeslotStartTime);
   const [timeslotTime, setTimeslotTime] = useState(latestStartTime);
   const [newTimeslotPopupOpen, setTimeslotPopupOpen] = useState(false);
@@ -175,18 +171,6 @@ function TimelineInput({minHour, maxHour}) {
   useEffect(() => {
     setTimeslotTime(latestStartTime);
   }, [latestStartTime, candidates, duration]);
-
-  const handleStartEditing = () => {
-    setEditing(true);
-    setTimeslotPopupOpen(true);
-  };
-
-  const handleCopyClick = () => {
-    pastCandidates.forEach(time => {
-      dispatch(addTimeslot(date, time));
-    });
-    setEditing(true);
-  };
 
   const handlePopupClose = () => {
     setTimeslotPopupOpen(false);
@@ -205,9 +189,26 @@ function TimelineInput({minHour, maxHour}) {
     dispatch(addTimeslot(date, newTime));
   };
 
+  // Function for calculating time by clicking on timeline picker
+  // const calculateTimeByPosition = (timelineElement, eventCoordX) => {
+  //   const timelineElBounds = timelineElement.getBoundingClientRect();
+  //   const leftOffset = eventCoordX - timelineElBounds.left;
+  //   const coef = timelineElBounds.width / (maxHour - minHour);
+  //   const time = ((leftOffset/coef) + minHour);
+  //   let hours = Math.floor(time);
+  //   const decimalMins = time - hours;
+  //   let mins = Math.round(decimalMins * 60);
+  //   if (mins === 60) {
+  //     mins = 0;
+  //     ++hours;
+  //   }
+  //   const roundedMins = Math.floor(mins / 15) * 15;
+  //   return `${hours}:${roundedMins === 0 ? '00' : roundedMins}`;
+  // };
+
   const groupedCandidates = splitOverlappingCandidates(candidates, duration);
 
-  return editing ? (
+  return (
     <div className={`${styles['timeline-input']} ${styles['edit']}`}>
       <div className={styles['timeline-candidates']}>
         {groupedCandidates.map((rowCandidates, i) => (
@@ -282,19 +283,6 @@ function TimelineInput({minHour, maxHour}) {
         }
       />
     </div>
-  ) : (
-    <div className={styles['timeline-input-wrapper']}>
-      <div className={`${styles['timeline-input']} ${styles['msg']}`} onClick={handleStartEditing}>
-        <Icon name="plus circle" size="large" />
-        <Trans>Click to add time slots</Trans>
-      </div>
-      {pastCandidates && (
-        <div className={`${styles['timeline-input']} ${styles['msg']}`} onClick={handleCopyClick}>
-          <Icon name="copy" size="large" />
-          <Trans>Copy time slots from previous day</Trans>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -327,7 +315,6 @@ TimelineContent.propTypes = {
 };
 
 export default function Timeline({date, availability, defaultMinHour, defaultMaxHour, hourStep}) {
-  const isTabletOrMobile = useIsSmallScreen();
   const [[minHour, maxHour], setHourSpan] = useState([defaultMinHour, defaultMaxHour]);
   const candidates = useSelector(getTimeslotsForActiveDate);
   const duration = useSelector(getDuration);
@@ -337,6 +324,9 @@ export default function Timeline({date, availability, defaultMinHour, defaultMax
   const busySlots = calculateBusyPositions(availability, minHour, maxHour);
   const timezone = useSelector(getTimezone);
   const dispatch = useDispatch();
+  const pastCandidates = (useSelector(getPreviousDayTimeslots) || []).filter(
+    c => !candidates.includes(c)
+  );
 
   useEffect(() => {
     if (!candidates.length) {
@@ -355,36 +345,46 @@ export default function Timeline({date, availability, defaultMinHour, defaultMax
     setHourSpan(getHourSpan(input));
   }, [candidates, defaultHourSpan, defaultMaxHour, defaultMinHour, duration]);
 
+  const handleCopyClick = () => {
+    pastCandidates.forEach(time => {
+      dispatch(addTimeslot(date, time));
+    });
+  };
+
   return (
     <div className={styles['timeline']}>
       <Grid>
         <Grid.Row className={styles['timeline-title']}>
           <Grid.Column>
-            <Grid stackable textAlign={isTabletOrMobile ? 'left' : 'right'}>
-              <Grid.Column computer={6} tablet={16}>
-                <Header as="h2" className={styles['timeline-date']}>
-                  {toMoment(date, 'YYYY-MM-DD').format('D MMM YYYY')}
-                </Header>
-              </Grid.Column>
-              <Grid.Column computer={10} tablet={16}>
-                <div className={styles['config-box']}>
-                  <DurationPicker />
-                  <TimezonePicker
-                    onChange={value => dispatch(setTimezone(value))}
-                    currentTz={timezone}
-                    title={t`Timezone`}
-                    selection
-                  />
-                </div>
-              </Grid.Column>
-            </Grid>
+            <div className={styles['config-box']}>
+              <DurationPicker />
+              <TimezonePicker
+                onChange={value => dispatch(setTimezone(value))}
+                currentTz={timezone}
+                title={t`Timezone`}
+                selection
+              />
+            </div>
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
-            <div className={styles['timeline-slot-picker']}>
-              <TimelineHeader hourSeries={hourSeries} hourSpan={hourSpan} hourStep={hourStep} />
-              <TimelineContent busySlots={busySlots} minHour={minHour} maxHour={maxHour} />
+            <div className={styles['timeline-slot-picker-wrap']}>
+              <div className={styles['timeline-slot-picker']}>
+                <TimelineHeader hourSeries={hourSeries} hourSpan={hourSpan} hourStep={hourStep} />
+                <TimelineContent busySlots={busySlots} minHour={minHour} maxHour={maxHour} />
+              </div>
+              {pastCandidates.length > 0 && (
+                <div
+                  className={`${styles['timeline-input']} ${styles['copy-timeslots-btn']} ${
+                    styles['msg']
+                  }`}
+                  onClick={handleCopyClick}
+                >
+                  <Icon name="copy" size="large" />
+                  <Trans>Copy time slots from previous day</Trans>
+                </div>
+              )}
             </div>
           </Grid.Column>
         </Grid.Row>

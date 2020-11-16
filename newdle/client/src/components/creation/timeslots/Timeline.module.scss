@@ -20,25 +20,42 @@ $label-width: 180px;
   }
 
   .timeline-hours {
-    margin-left: 30px;
-    margin-right: 10px;
     color: $grey;
-    height: $row-height;
-    position: relative;
+    height: 30px;
 
     .timeline-hour {
       position: absolute;
-
+      font-size: 0.75em;
+      line-height: 1em;
+      height: 100%;
+      &:before {
+        content: '';
+        position: absolute;
+        height: calc(100% - 1em - 3px);
+        margin-top: calc(1em + 3px);
+        border-left: 1px solid $light-grey;
+      }
       .timeline-hour-text {
-        margin-left: -5px;
+        transform: translateX(-50%);
       }
     }
+  }
+
+  .timeline-slot-picker-wrap {
+    padding-left: 40px;
   }
 
   .timeline-slot-picker {
     margin-left: 10px;
     margin-right: 10px;
+    position: relative;
   }
+
+  .copy-timeslots-btn {
+    margin-top: 20px;
+    margin-right: 40px;
+  }
+
   @media screen and (min-width: 990px) {
     .timeline-slot-picker {
       //breakpoint happens at 990, if no width specified, the view is jumpy
@@ -47,9 +64,6 @@ $label-width: 180px;
     }
   }
   .timeline-rows {
-    position: relative;
-    margin-left: 20px;
-    margin-right: 10px;
     .timeline-row {
       height: $row-height;
       display: flex;
@@ -98,7 +112,7 @@ $label-width: 180px;
           align-items: center;
 
           img {
-            margin-left: 10px;
+            margin-right: 10px;
             border-radius: 50%;
           }
         }
@@ -181,11 +195,17 @@ $label-width: 180px;
     display: flex;
     align-items: center;
     min-height: $row-height;
-    background-color: lighten($grey, 45%);
-    border-radius: 3px;
     box-sizing: content-box;
     flex-basis: 100%;
-    margin-left: 5px;
+    padding: 10px;
+
+    .add-btn {
+      margin-left: auto;
+      position: absolute;
+      left: -25px;
+      top: -20px;
+      color: $grey;
+    }
 
     .timeline-candidates {
       display: flex;
@@ -209,20 +229,6 @@ $label-width: 180px;
         cursor: pointer;
       }
     }
-
-    &.edit {
-      background-color: lighten($green, 27%);
-      border: 5px solid lighten($green, 22%);
-      margin: -5px -40px;
-      padding: 10px;
-
-      .add-btn {
-        margin-left: auto;
-        position: absolute;
-        right: -35px;
-        color: $grey;
-      }
-    }
   }
 }
 
@@ -236,23 +242,21 @@ $label-width: 180px;
 }
 
 .config-box {
-  background-color: $coral;
   padding: 0.5em;
-  color: $white;
   margin-bottom: 15px;
-  border-radius: 3px;
 
   > * {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 15px;
 
     :global(.ui.dropdown) {
       margin-left: 0.5em;
     }
 
     &:not(:last-child) {
-      padding-bottom: 0.5em;
+      border-bottom: 1px solid $coral;
     }
   }
 

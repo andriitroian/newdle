@@ -13,9 +13,9 @@ export default function TimelineHeader({hourSeries, hourSpan, hourStep}) {
           key={`timeline-label-${i}`}
           style={{left: `${(i / hourSpan) * 100}%`}}
         >
-          <span className={styles['timeline-hour-text']}>
+          <div className={styles['timeline-hour-text']}>
             {n === 0 && hourSeries[n] === 0 ? '0' : moment({hours: hourSeries[n]}).format('k')}
-          </span>
+          </div>
         </div>
       ))}
     </div>
